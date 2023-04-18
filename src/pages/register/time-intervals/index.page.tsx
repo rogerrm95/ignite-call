@@ -1,4 +1,4 @@
-import { useFieldArray, useForm } from 'react-hook-form'
+import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import {
   Button,
   Checkbox,
@@ -29,6 +29,7 @@ export default function TimeIntervals() {
     handleSubmit,
     formState: { isSubmitting, errors },
     control,
+    watch,
   } = useForm({
     defaultValues: {
       intervals: [
@@ -43,12 +44,14 @@ export default function TimeIntervals() {
     },
   })
 
+  const weekDays = getWeekDays()
+
   const { fields } = useFieldArray({
     name: 'intervals',
     control,
   })
 
-  const weekDays = getWeekDays()
+  const intervals = watch('intervals')
 
   async function handleSetTimeIntervals() {}
 
@@ -70,7 +73,20 @@ export default function TimeIntervals() {
             return (
               <IntervalItem key={field.id}>
                 <IntervalDay>
-                  <Checkbox />
+                  <Controller
+                    name={`intervals.${index}.enable`}
+                    control={control}
+                    render={({ field }) => {
+                      return (
+                        <Checkbox
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked === true)
+                          }}
+                          checked={field.value}
+                        />
+                      )
+                    }}
+                  />
                   <Text>{weekDays[field.weekDay]}</Text>
                 </IntervalDay>
 
@@ -79,6 +95,7 @@ export default function TimeIntervals() {
                     size={'sm'}
                     type="time"
                     step={60}
+                    disabled={intervals[index].enable === false}
                     {...register(`intervals.${index}.startTime`)}
                   />
 
@@ -86,6 +103,7 @@ export default function TimeIntervals() {
                     size={'sm'}
                     type="time"
                     step={60}
+                    disabled={intervals[index].enable === false}
                     {...register(`intervals.${index}.endTime`)}
                   />
                 </IntervalInputs>
