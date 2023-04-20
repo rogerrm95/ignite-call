@@ -22,6 +22,7 @@ import {
 import { z } from 'zod'
 import { getWeekDays } from '@/utils/get-week-days'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { convertTimeToMinutes } from '@/utils/convertTimeStringToMinutes'
 
 const timeIntervalsSchema = z.object({
   intervals: z
@@ -40,10 +41,32 @@ const timeIntervalsSchema = z.object({
     )
     .refine((intervals) => intervals.length > 0, {
       message: 'Selecionar pelo menos um dia da semana',
-    }),
+    })
+    .transform((intervals) => {
+      return intervals.map((interval) => {
+        return {
+          weekDay: interval.weekDay,
+          startTimeInMinutes: convertTimeToMinutes(interval.startTime),
+          endTimeInMinutes: convertTimeToMinutes(interval.endTime),
+        }
+      })
+    })
+    .refine(
+      (intervals) => {
+        return intervals.every(
+          (interval) =>
+            interval.endTimeInMinutes - 60 >= interval.startTimeInMinutes,
+        )
+      },
+      {
+        message:
+          'O horário de término deve ser pelo menos 1 hora distante do início',
+      },
+    ),
 })
 
-type TimeIntervalFormData = z.infer<typeof timeIntervalsSchema>
+type TimeIntervalFormInput = z.input<typeof timeIntervalsSchema>
+type TimeIntervalFormOutput = z.output<typeof timeIntervalsSchema>
 
 export default function TimeIntervals() {
   const {
@@ -52,7 +75,7 @@ export default function TimeIntervals() {
     formState: { isSubmitting, errors },
     control,
     watch,
-  } = useForm({
+  } = useForm<TimeIntervalFormInput>({
     resolver: zodResolver(timeIntervalsSchema),
     defaultValues: {
       intervals: [
@@ -76,8 +99,10 @@ export default function TimeIntervals() {
 
   const intervals = watch('intervals')
 
-  async function handleSetTimeIntervals(data: TimeIntervalFormData) {
-    console.log(data)
+  async function handleSetTimeIntervals(data: any) {
+    const formData = data as TimeIntervalFormOutput
+
+    console.log(formData)
   }
 
   return (
