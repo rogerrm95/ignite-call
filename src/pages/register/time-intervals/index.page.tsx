@@ -8,6 +8,12 @@ import {
   TextInput,
 } from '@ignite-ui/react'
 
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+
+import { getWeekDays } from '@/utils/get-week-days'
+import { convertTimeToMinutes } from '@/utils/convertTimeStringToMinutes'
+
 import { ArrowRight } from 'phosphor-react'
 
 import { Container, Header } from '../styles'
@@ -19,10 +25,7 @@ import {
   IntervalInputs,
   IntervalItem,
 } from './styles'
-import { z } from 'zod'
-import { getWeekDays } from '@/utils/get-week-days'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { convertTimeToMinutes } from '@/utils/convertTimeStringToMinutes'
+import { api } from '@/lib/axios'
 
 const timeIntervalsSchema = z.object({
   intervals: z
@@ -100,9 +103,9 @@ export default function TimeIntervals() {
   const intervals = watch('intervals')
 
   async function handleSetTimeIntervals(data: any) {
-    const formData = data as TimeIntervalFormOutput
+    const { intervals } = data as TimeIntervalFormOutput
 
-    console.log(formData)
+    await api.post('/users/time-intervals', intervals)
   }
 
   return (
