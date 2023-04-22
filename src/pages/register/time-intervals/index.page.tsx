@@ -26,6 +26,7 @@ import {
   IntervalItem,
 } from './styles'
 import { api } from '@/lib/axios'
+import { useRouter } from 'next/router'
 
 const timeIntervalsSchema = z.object({
   intervals: z
@@ -72,6 +73,8 @@ type TimeIntervalFormInput = z.input<typeof timeIntervalsSchema>
 type TimeIntervalFormOutput = z.output<typeof timeIntervalsSchema>
 
 export default function TimeIntervals() {
+  const router = useRouter()
+
   const {
     register,
     handleSubmit,
@@ -106,6 +109,8 @@ export default function TimeIntervals() {
     const { intervals } = data as TimeIntervalFormOutput
 
     await api.post('/users/time-intervals', { intervals })
+
+    await router.push('/register/update-profile')
   }
 
   return (
