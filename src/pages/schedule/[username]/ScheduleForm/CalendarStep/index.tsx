@@ -10,7 +10,7 @@ import { useState } from 'react'
 
 export function CalendarStep() {
   // eslint-disable-next-line no-unused-vars
-  const [isDateSelected, setIsDateSelected] = useState(true)
+  const [isDateSelected, setIsDateSelected] = useState(false)
 
   return (
     <Container isTimePickerOpen={isDateSelected}>
