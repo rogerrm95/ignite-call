@@ -1,8 +1,12 @@
 import { useMemo, useState } from 'react'
-import { getWeekDays } from '@/utils/get-week-days'
-import { CaretLeft, CaretRight } from 'phosphor-react'
-import dayjs from 'dayjs'
+import { useRouter } from 'next/router'
 
+import { api } from '@/lib/axios'
+import { useQuery } from '@tanstack/react-query'
+import dayjs from 'dayjs'
+import { getWeekDays } from '@/utils/get-week-days'
+
+import { CaretLeft, CaretRight } from 'phosphor-react'
 import {
   CalendarActions,
   CalendarBody,
@@ -22,38 +26,65 @@ interface CalendarWeek {
 
 type CalendarWeeks = CalendarWeek[]
 
+interface BlockedDates {
+  blockedWeekDays: number[]
+}
+
 interface CalendarProps {
-  selectedDate?: Date | null
+  selectedDate: Date | null
   onDateSelected: (date: Date) => void
 }
 
 export function Calendar({ onDateSelected, selectedDate }: CalendarProps) {
-  const shortWeekDays = getWeekDays({ short: true })
-
   const [currentDate, setCurrentDate] = useState(() => {
     return dayjs().set('date', 1)
   })
 
-  function handlePreviousMonth() {
-    const previousMonthDate = currentDate.subtract(1, 'month')
+  const router = useRouter()
 
-    setCurrentDate(previousMonthDate)
+  function handlePreviousMonth() {
+    const previousMonth = currentDate.subtract(1, 'month')
+
+    setCurrentDate(previousMonth)
   }
 
   function handleNextMonth() {
-    const previousMonthDate = currentDate.add(1, 'month')
+    const nextMonth = currentDate.add(1, 'month')
 
-    setCurrentDate(previousMonthDate)
+    setCurrentDate(nextMonth)
   }
+
+  const shortWeekDays = getWeekDays({ short: true })
 
   const currentMonth = currentDate.format('MMMM')
   const currentYear = currentDate.format('YYYY')
 
+  const username = String(router.query.username)
+
+  const { data: blockedDates } = useQuery<BlockedDates>(
+    ['blocked-dates', currentDate.get('year'), currentDate.get('month')],
+    async () => {
+      const response = await api.get(`/users/${username}/blocked-dates`, {
+        params: {
+          year: currentDate.get('year'),
+          month: currentDate.get('month') + 1,
+        },
+      })
+
+      return response.data
+    },
+  )
+
+  // Calcular os dias do mês disponíveis //
   const calendarWeeks = useMemo(() => {
+    if (!blockedDates) {
+      return []
+    }
+
     const daysInMonthsArray = Array.from({
       length: currentDate.daysInMonth(),
-    }).map((_, i) => {
-      return currentDate.set('date', i + 1)
+    }).map((_, index) => {
+      return currentDate.set('date', index + 1)
     })
 
     const firstWeekDay = currentDate.get('day')
@@ -86,7 +117,9 @@ export function Calendar({ onDateSelected, selectedDate }: CalendarProps) {
       ...daysInMonthsArray.map((date) => {
         return {
           date,
-          disabled: date.endOf('day').isBefore(new Date()),
+          disabled:
+            date.endOf('day').isBefore(new Date()) ||
+            blockedDates?.blockedWeekDays.includes(date.get('day')),
         }
       }),
       ...nextMonthFillArray.map((date) => {
@@ -114,7 +147,7 @@ export function Calendar({ onDateSelected, selectedDate }: CalendarProps) {
     )
 
     return calendarWeeks
-  }, [currentDate])
+  }, [currentDate, blockedDates])
 
   return (
     <CalendarContainer>
