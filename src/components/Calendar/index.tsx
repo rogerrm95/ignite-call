@@ -119,7 +119,7 @@ export function Calendar({ onDateSelected, selectedDate }: CalendarProps) {
           date,
           disabled:
             date.endOf('day').isBefore(new Date()) ||
-            blockedDates?.blockedWeekDays.includes(date.get('day')),
+            blockedDates.blockedWeekDays.includes(date.get('day')),
         }
       }),
       ...nextMonthFillArray.map((date) => {
